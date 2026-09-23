@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { margin:0; background:#202124; font-family:system-ui,sans-serif; }
+      header { height:52px; display:flex; align-items:center; padding:0 22px; color:#fff; }
+      iframe { width:calc(100% - 44px); height:760px; margin:0 22px; border:0; border-radius:6px; }
+    </style>
+  </head>
+  <body>
+    <header>DataLeap · Apply regression</header>
+    <iframe data-notebook-dom="true" src="mock-apply-frame.html?path=apply.ipynb"></iframe>
+    <script>
+      const listeners = [];
+      globalThis.chrome = {
+        runtime: {
+          lastError:null,
+          getURL(path) { return `../../src/extension/${path}`; },
+          sendMessage(message, callback) {
+            if (message.type === "DORADUDE_GET_SETTINGS") callback({ neighborCells:2, customCellSelector:"", theme:"light" });
+            else if (message.type === "DORADUDE_PORTAL_COMMAND") {
+              document.querySelector("iframe").contentWindow.__deliverDoradudeCommand(
+                { ...message, type:"DORADUDE_FRAME_COMMAND" }, callback
+              );
+            } else callback?.({ ok:true });
+          },
+          onMessage: { addListener(listener) { listeners.push(listener); } }
+        }
+      };
+      globalThis.__deliverDoradudePortalEvent = (message) => {
+        for (const listener of listeners) listener({ ...message, type:"DORADUDE_PORTAL_EVENT", frameId:9 });
+      };
+    </script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script src="../../src/extension/content/ui.js"></script>
+    <script src="../../src/extension/content/index.js"></script>
+  </body>
+</html>

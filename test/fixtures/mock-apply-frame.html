@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { margin:0; padding:28px; background:#f4f5f7; font-family:system-ui,sans-serif; }
+      .jp-Cell { padding:14px; border:1px solid #d5d9df; background:#fff; }
+      .monaco-editor { min-height:180px; padding:12px; background:#202124; color:#e8eaed; font:14px/1.6 ui-monospace,monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="jp-Cell jp-CodeCell jp-mod-active jp-mod-selected" id="target">
+      <div class="monaco-editor" data-uri="inmemory://doradude/apply.py"><div class="view-line">value = 1</div></div>
+    </div>
+    <script>
+      const editorNode = document.querySelector(".monaco-editor");
+      const model = {
+        value: "value = 1",
+        uri: "inmemory://doradude/apply.py",
+        getValue() { return this.value; },
+        getLanguageId() { return "python"; },
+        getFullModelRange() { return { startLineNumber:1, startColumn:1, endLineNumber:1, endColumn:this.value.length + 1 }; },
+        pushStackElement() {},
+        pushEditOperations(_before, edits) {
+          this.value = edits[0].text;
+          editorNode.querySelector(".view-line").textContent = this.value;
+        }
+      };
+      const editor = {
+        getDomNode() { return editorNode; },
+        getModel() { return model; },
+        getSelection() { return null; },
+        executeEdits() { return false; },
+        pushUndoStop() {},
+        focus() {}
+      };
+      globalThis.monaco = { editor: { getEditors: () => [editor], getModels: () => [model] } };
+      globalThis.__getAppliedSource = () => model.value;
+
+      const listeners = [];
+      globalThis.chrome = {
+        runtime: {
+          lastError: null,
+          sendMessage(message, callback) {
+            if (message.type === "DORADUDE_GET_SETTINGS") callback({ neighborCells:2, customCellSelector:"", theme:"light" });
+            else if (message.type === "DORADUDE_FRAME_EVENT") parent.__deliverDoradudePortalEvent(message);
+            else if (message.type === "DORADUDE_BRIDGE_STREAM") {
+              const emit = (event) => listeners.forEach((listener) => listener(
+                { type:"DORADUDE_BRIDGE_STREAM_EVENT", requestId:message.requestId, event }, {}, () => {}
+              ));
+              setTimeout(() => emit({ type:"reasoning_delta", delta:"**检查写入路径**\n\n- 保留撤销记录\n- 校验模型内容" }), 120);
+              setTimeout(() => callback({ ok:true, data:{
+                mode:"replace",
+                summary:"已生成替换代码。",
+                code:"value = 2",
+                explanation:"将 `value` 更新为 **2**。"
+              } }), 350);
+            } else callback?.({ ok:true });
+          },
+          onMessage: { addListener(listener) { listeners.push(listener); } }
+        }
+      };
+      globalThis.__deliverDoradudeCommand = (message, callback) => {
+        for (const listener of listeners) if (listener(message, {}, callback)) return;
+      };
+    </script>
+    <script src="../../src/extension/page/notebook-bridge.js"></script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script src="../../src/extension/content/ui.js"></script>
+    <script src="../../src/extension/content/index.js"></script>
+    <script>
+      setTimeout(() => {
+        editorNode.dispatchEvent(new PointerEvent("pointerover", { bubbles:true }));
+        setTimeout(() => {
+          const shadow = parent.document.querySelector("#doradude-notebook-root").shadowRoot;
+          shadow.querySelector(".mn-ask").click();
+          shadow.querySelector("textarea").value = "把值改为 2";
+          shadow.querySelector(".mn-submit").click();
+          setTimeout(() => shadow.querySelector(".mn-apply")?.click(), 650);
+          setTimeout(() => {
+            parent.document.body.dataset.appliedSource = model.value;
+            parent.document.body.dataset.applyButton = shadow.querySelector(".mn-apply")?.textContent || "";
+          }, 900);
+        }, 160);
+      }, 160);
+    </script>
+  </body>
+</html>

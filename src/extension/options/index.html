@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doradude 设置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img class="mark" src="../icons/icon48.png" alt="" />
+        <div>
+          <h1>Doradude</h1>
+          <p>连接 DataLeap Cell 与你的 Codex Runtime</p>
+        </div>
+      </header>
+
+      <form id="settings-form">
+        <section>
+          <h2>Codex Bridge</h2>
+          <label for="endpoint">服务地址</label>
+          <input id="endpoint" name="endpoint" type="url" required placeholder="http://127.0.0.1:4343" />
+          <p class="hint">远程地址应通过 HTTPS 反向代理，并配置访问令牌。</p>
+
+          <label for="token">访问令牌</label>
+          <input id="token" name="token" type="password" autocomplete="off" placeholder="本机连接可留空" />
+          <div class="inline-actions">
+            <button id="test" type="button">测试连接</button>
+            <span id="connection-status" role="status"></span>
+          </div>
+        </section>
+
+        <section>
+          <h2>Notebook 上下文</h2>
+          <label for="neighborCells">前后 Cell 数量</label>
+          <input id="neighborCells" name="neighborCells" type="number" min="0" max="10" step="1" required />
+
+          <label for="customCellSelector">自定义 Cell 选择器</label>
+          <input id="customCellSelector" name="customCellSelector" type="text" spellcheck="false" placeholder="可选，例如 .my-notebook-cell" />
+          <p class="hint">仅在 DataLeap 页面结构无法自动识别时填写 CSS 选择器。</p>
+        </section>
+
+        <footer>
+          <span id="save-status" role="status"></span>
+          <button class="primary" type="submit">保存设置</button>
+        </footer>
+      </form>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

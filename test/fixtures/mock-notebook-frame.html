@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { margin:0; padding:28px; background:#f4f5f7; font-family:system-ui,sans-serif; }
+      .jp-Cell { margin-bottom:14px; padding:14px; border:1px solid #d5d9df; background:#fff; }
+      textarea { width:100%; height:150px; border:0; font:14px/1.5 ui-monospace,monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="jp-Cell jp-CodeCell jp-mod-active jp-mod-selected" id="target"><textarea>events.groupBy("country").count().show()</textarea></div>
+    <div class="jp-Cell jp-CodeCell"><textarea># Continue analysis</textarea></div>
+    <script>
+      const listeners = [];
+      globalThis.chrome = {
+        runtime: {
+          lastError: null,
+          sendMessage(message, callback) {
+            if (message.type === "DORADUDE_GET_SETTINGS") callback({ neighborCells: 2, customCellSelector: "" });
+            else if (message.type === "DORADUDE_FRAME_EVENT") parent.__deliverDoradudePortalEvent(message);
+            else if (message.type === "DORADUDE_BRIDGE_STREAM") {
+              const emit = (event) => {
+                for (const listener of listeners) {
+                  listener({ type:"DORADUDE_BRIDGE_STREAM_EVENT", requestId:message.requestId, event }, {}, () => {});
+                }
+              };
+              setTimeout(() => emit({ type:"phase", message:"上下文已发送，等待 Codex 分析" }), 180);
+              setTimeout(() => emit({ type:"reasoning_delta", delta:"正在检查聚合逻辑与输出。" }), 420);
+              setTimeout(
+                () => callback({ ok:true, data:{ mode:"explain", summary:"**按国家聚合**事件数量。", code:null, explanation:"处理步骤：\n\n1. 按 `country` 分组\n2. 统计每组记录数\n\n> 空数据集会返回空结果。" } }),
+                1400
+              );
+            } else callback?.({ ok:true });
+          },
+          onMessage: { addListener(listener) { listeners.push(listener); } }
+        }
+      };
+      globalThis.__deliverDoradudeCommand = (message, callback) => {
+        for (const listener of listeners) {
+          if (listener(message, {}, callback)) return;
+        }
+      };
+    </script>
+    <script src="../../src/extension/page/notebook-bridge.js"></script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script src="../../src/extension/content/ui.js"></script>
+    <script src="../../src/extension/content/index.js"></script>
+    <script>
+      history.replaceState(null, "", "workspaces/auto-R?path=42.ipynb");
+      setTimeout(() => {
+        document.querySelector("#target textarea").dispatchEvent(new PointerEvent("pointerover", { bubbles:true }));
+        setTimeout(() => {
+          const root = parent.document.querySelector("#doradude-notebook-root");
+          const shadow = root.shadowRoot;
+          shadow.querySelector(".mn-ask").click();
+          shadow.querySelector("textarea").value = "解释当前 Cell";
+          shadow.querySelector(".mn-submit").click();
+          parent.document.body.dataset.doradudeReady = String(!document.querySelector("#doradude-notebook-root"));
+          parent.document.body.dataset.toolbarVisible = shadow.querySelector(".mn-toolbar").dataset.visible;
+          parent.document.body.dataset.panelOpen = shadow.querySelector(".mn-panel").dataset.open;
+          setTimeout(() => {
+            shadow.querySelector("textarea").value = "再说明一个边界情况";
+            shadow.querySelector(".mn-submit").click();
+          }, 1700);
+        }, 180);
+      }, 180);
+    </script>
+  </body>
+</html>

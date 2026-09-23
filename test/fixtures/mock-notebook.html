@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doradude UI Test Notebook</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #f4f5f7; color: #25282d; font-family: system-ui, sans-serif; }
+      header { height: 54px; display: flex; align-items: center; padding: 0 24px; background: #202124; color: #fff; font-weight: 650; }
+      main { width: min(920px, calc(100% - 32px)); margin: 28px auto; }
+      .jp-Cell { margin: 0 0 14px; padding: 12px 14px; border: 1px solid #d5d9df; border-radius: 5px; background: #fff; }
+      .jp-Cell textarea { width: 100%; height: 110px; resize: none; border: 0; outline: 0; font: 14px/1.55 ui-monospace, monospace; }
+      .jp-OutputArea { border-top: 1px solid #eceef1; padding-top: 9px; color: #a12b24; font: 12px/1.5 ui-monospace, monospace; }
+    </style>
+  </head>
+  <body>
+    <header>DataLeap · Notebook</header>
+    <main>
+      <div class="jp-Cell jp-CodeCell"><textarea>from pyspark.sql import functions as F
+
+events.groupBy("country").count().show()</textarea></div>
+      <div class="jp-Cell jp-CodeCell" id="target"><textarea>result = events.filter(F.col("status") == "active")
+result.display()</textarea><div class="jp-OutputArea">NameError: name 'events' is not defined</div></div>
+      <div class="jp-Cell jp-CodeCell"><textarea># Continue analysis below</textarea></div>
+    </main>
+    <script>
+      globalThis.chrome = {
+        runtime: {
+          lastError: null,
+          sendMessage(message, callback) {
+            if (message.type === "DORADUDE_GET_SETTINGS") callback({ neighborCells: 2, customCellSelector: "" });
+            else callback?.({ ok: true });
+          }
+        }
+      };
+      window.confirm = () => true;
+    </script>
+    <script src="../../src/extension/page/notebook-bridge.js"></script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script src="../../src/extension/content/ui.js"></script>
+    <script src="../../src/extension/content/index.js"></script>
+    <script>
+      setTimeout(() => {
+        const target = document.querySelector("#target textarea");
+        target.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
+        setTimeout(() => {
+          const shadow = document.querySelector("#doradude-notebook-root").shadowRoot;
+          shadow.querySelector(".mn-panel").dataset.open = "true";
+          shadow.querySelector("textarea").value = "修复这个 NameError，并保持现有 DataFrame 过滤逻辑";
+          document.body.dataset.doradudeReady = "true";
+        }, 80);
+      }, 120);
+    </script>
+  </body>
+</html>

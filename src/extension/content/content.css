@@ -1,0 +1,7 @@
+[data-doradude-cell-id] {
+  --doradude-cell-outline: transparent;
+}
+
+[data-doradude-cell-id]:hover {
+  outline: 1px solid var(--doradude-cell-outline);
+}

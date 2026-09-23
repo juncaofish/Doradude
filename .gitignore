@@ -1,0 +1,21 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+doradude-debug.json
+
+# Browser captures and generated test artifacts
+dataleap*.html
+test/artifacts/
+
+# Local planning and tooling state
+.planning/
+.cache/
+
+# Logs and operating-system metadata
+*.log
+.DS_Store

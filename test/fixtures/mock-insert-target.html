@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Insert target regression</title>
+  </head>
+  <body>
+    <main id="notebook">
+      <div class="jp-Cell jp-CodeCell" id="target">
+        <div class="monaco-editor" data-uri="inmemory://target.py"></div>
+        <i class="icon-add_circle" title="New Cell"></i>
+      </div>
+      <div class="jp-Cell jp-CodeCell" id="original-next">
+        <div class="monaco-editor" data-uri="inmemory://next.py"></div>
+      </div>
+    </main>
+    <script>
+      const editors = new Map();
+      function attachEditor(cell, uri, initial) {
+        const node = cell.querySelector(".monaco-editor");
+        const model = {
+          uri,
+          value: initial,
+          getValue() { return this.value; },
+          getLanguageId() { return "python"; },
+          getFullModelRange() { return {}; },
+          pushStackElement() {},
+          pushEditOperations(_before, edits) { this.value = edits[0].text; }
+        };
+        editors.set(node, {
+          getDomNode: () => node,
+          getModel: () => model,
+          getSelection: () => null,
+          executeEdits(_source, edits) { model.value = edits[0].text; return true; },
+          pushUndoStop() {},
+          focus() {}
+        });
+        return model;
+      }
+
+      attachEditor(document.querySelector("#target"), "inmemory://target.py", "value = 1");
+      attachEditor(document.querySelector("#original-next"), "inmemory://next.py", "print(value)");
+      globalThis.monaco = { editor: { getEditors: () => [...editors.values()] } };
+    </script>
+    <script src="../../src/extension/page/notebook-bridge.js"></script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script>
+      document.querySelector(".icon-add_circle").addEventListener("click", () => {
+        const unrelated = document.createElement("div");
+        unrelated.className = "jp-Cell jp-CodeCell";
+        unrelated.id = "unrelated";
+        unrelated.innerHTML = '<div class="monaco-editor" data-uri="inmemory://unrelated.py"></div>';
+        document.querySelector("#notebook").prepend(unrelated);
+        const unrelatedModel = attachEditor(unrelated, "inmemory://unrelated.py", "do_not_change = True");
+
+        setTimeout(() => {
+          const inserted = document.createElement("div");
+          inserted.className = "jp-Cell jp-CodeCell jp-mod-active";
+          inserted.id = "inserted";
+          inserted.innerHTML = '<div class="monaco-editor" data-uri="inmemory://inserted.py"></div>';
+          document.querySelector("#target").after(inserted);
+          const insertedModel = attachEditor(inserted, "inmemory://inserted.py", "");
+          globalThis.__insertModels = { unrelatedModel, insertedModel };
+        }, 80);
+      });
+
+      const adapter = new DoradudeNotebook.NotebookAdapter();
+      adapter.insertCellBelow(document.querySelector("#target"), "generated = True").then(() => {
+        document.body.dataset.insertResult = "ok";
+        document.body.dataset.insertedSource = globalThis.__insertModels.insertedModel.value;
+        document.body.dataset.unrelatedSource = globalThis.__insertModels.unrelatedModel.value;
+      }).catch((error) => {
+        document.body.dataset.insertResult = error.message;
+      });
+    </script>
+  </body>
+</html>

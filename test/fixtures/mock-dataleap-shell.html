@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doradude iframe portal test</title>
+    <style>
+      body { margin:0; background:#202124; font-family:system-ui,sans-serif; }
+      header { height:52px; display:flex; align-items:center; padding:0 22px; color:#fff; }
+      .frame-shell { height:760px; margin:0 22px; overflow:hidden; border-radius:6px; background:#f4f5f7; }
+      iframe { width:100%; height:100%; border:0; }
+    </style>
+  </head>
+  <body>
+    <header>DataLeap · Development</header>
+    <div class="frame-shell"><iframe data-notebook-dom="true" src="mock-notebook-frame.html?path=42.ipynb"></iframe></div>
+    <script>
+      const listeners = [];
+      const fixtureParams = new URLSearchParams(location.search);
+      window.addEventListener("error", (event) => { document.body.dataset.scriptError = event.message; });
+      globalThis.chrome = {
+        runtime: {
+          lastError: null,
+          getURL(path) { return `../../src/extension/${path}`; },
+          sendMessage(message, callback) {
+            if (message.type === "DORADUDE_GET_SETTINGS") {
+              callback({ neighborCells: 2, customCellSelector: "", theme: fixtureParams.get("theme") || "light" });
+            }
+            else if (message.type === "DORADUDE_SET_THEME") {
+              document.body.dataset.savedTheme = message.theme;
+              callback({ ok: true, theme: message.theme });
+            }
+            else if (message.type === "DORADUDE_PORTAL_COMMAND") {
+              document.querySelector("iframe").contentWindow.__deliverDoradudeCommand(
+                { ...message, type: "DORADUDE_FRAME_COMMAND" },
+                callback
+              );
+            } else callback?.({ ok: true });
+          },
+          onMessage: { addListener(listener) { listeners.push(listener); } }
+        }
+      };
+      globalThis.__deliverDoradudePortalEvent = (message) => {
+        document.body.dataset.portalEvent = message.event;
+        document.body.dataset.frameKey = message.frameKey;
+        document.body.dataset.frameSrc = DoradudeNotebook.sanitizeNotebookUrl(document.querySelector("iframe").src);
+        document.body.dataset.listenerCount = String(listeners.length);
+        for (const listener of listeners) listener({ ...message, type: "DORADUDE_PORTAL_EVENT", frameId: 7 });
+      };
+      window.confirm = () => true;
+    </script>
+    <script src="../../src/extension/content/adapter.js"></script>
+    <script src="../../src/extension/content/ui.js"></script>
+    <script src="../../src/extension/content/index.js"></script>
+    <script>
+      if (fixtureParams.has("toggle")) {
+        setTimeout(() => document.querySelector("#doradude-notebook-root")?.shadowRoot.querySelector(".mn-theme")?.click(), 700);
+      }
+    </script>
+  </body>
+</html>

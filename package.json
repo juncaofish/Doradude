@@ -1,0 +1,16 @@
+{
+  "name": "doradude",
+  "version": "0.2.7",
+  "private": true,
+  "type": "module",
+  "description": "A browser extension that connects DataLeap Notebook cells to Codex.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "bridge": "node bridge/server.js",
+    "release": "npm test && node scripts/release.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

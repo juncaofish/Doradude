@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "Doradude",
+  "description": "Use Codex beside DataLeap Notebook cells, with review-before-apply edits.",
+  "version": "0.2.7",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Doradude",
+    "default_popup": "popup/index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "options_page": "options/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/icon48.png"],
+      "matches": ["https://*.volcengine.com/*", "https://*.volces.com/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.volcengine.com/*",
+        "https://*.volces.com/*"
+      ],
+      "js": ["page/notebook-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://*.volcengine.com/*",
+        "https://*.volces.com/*"
+      ],
+      "js": [
+        "content/adapter.js",
+        "content/ui.js",
+        "content/index.js"
+      ],
+      "css": ["content/content.css"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true
+    }
+  ]
+}
