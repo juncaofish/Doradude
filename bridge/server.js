@@ -85,7 +85,7 @@ export function parseConfig(args, env) {
   }
   return {
     host: flags.get("host") || env.DORADUDE_HOST || "127.0.0.1",
-    port: numberInRange(flags.get("port") || env.DORADUDE_PORT || "4343", 1, 65535, "port"),
+    port: numberInRange(flags.get("port") || env.DORADUDE_PORT || "4344", 1, 65535, "port"),
     token: flags.get("token") || env.DORADUDE_TOKEN || "",
     codexBinary: flags.get("codex-bin") || env.DORADUDE_CODEX_BIN || "codex",
     model: flags.get("model") || env.DORADUDE_CODEX_MODEL || "",

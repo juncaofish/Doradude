@@ -1,5 +1,5 @@
 const DEFAULT_SETTINGS = Object.freeze({
-  endpoint: "http://127.0.0.1:4343",
+  endpoint: "http://127.0.0.1:4344",
   neighborCells: 2,
   customCellSelector: "",
   theme: "light",
@@ -104,18 +104,16 @@ async function callBridge(path, method = "GET", body) {
   const timer = setTimeout(() => controller.abort(), settings.requestTimeoutMs);
 
   try {
+    const headers = createRequestHeaders(secrets.token, body !== undefined);
     const response = await fetch(`${endpoint}${path}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(secrets.token ? { Authorization: `Bearer ${secrets.token}` } : {})
-      },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal
     });
-    const payload = await response.json().catch(() => ({}));
+    const payload = await readResponsePayload(response);
     if (!response.ok) {
-      throw new Error(payload.error || `Bridge returned HTTP ${response.status}`);
+      throw new Error(bridgeHttpError(response, payload));
     }
     return payload;
   } catch (error) {
@@ -140,16 +138,13 @@ async function callBridgeStream(path, method = "POST", body, onEvent) {
   try {
     const response = await fetch(`${endpoint}${path}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(secrets.token ? { Authorization: `Bearer ${secrets.token}` } : {})
-      },
+      headers: createRequestHeaders(secrets.token, true),
       body: JSON.stringify(body),
       signal: controller.signal
     });
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || `Bridge returned HTTP ${response.status}`);
+      const payload = await readResponsePayload(response);
+      throw new Error(bridgeHttpError(response, payload));
     }
     if (!response.body) throw new Error("Bridge did not return a stream");
 
@@ -190,4 +185,30 @@ async function callBridgeStream(path, method = "POST", body, onEvent) {
 function normalizeEndpoint(value) {
   const parsed = new URL(String(value || DEFAULT_SETTINGS.endpoint));
   return parsed.origin + parsed.pathname.replace(/\/$/, "");
+}
+
+function createRequestHeaders(token, hasBody) {
+  return {
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+async function readResponsePayload(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300) };
+  }
+}
+
+function bridgeHttpError(response, payload) {
+  const detail = payload?.error || payload?.message;
+  if (/connection header did not include ['"]?upgrade/i.test(detail || "")) {
+    return "该地址是 Codex WebSocket 服务，不是 Doradude Bridge。请运行 npm run bridge，并将服务地址改为 http://127.0.0.1:4344";
+  }
+  const status = `${response.status}${response.statusText ? ` ${response.statusText}` : ""}`;
+  return detail ? `Bridge HTTP ${status}: ${detail}` : `Bridge returned HTTP ${status}`;
 }

@@ -5,7 +5,7 @@ import { parseConfig } from "../bridge/server.js";
 test("uses loopback and app-server defaults", () => {
   const config = parseConfig([], {});
   assert.equal(config.host, "127.0.0.1");
-  assert.equal(config.port, 4343);
+  assert.equal(config.port, 4344);
   assert.equal(config.codexBinary, "codex");
   assert.equal(config.token, "");
 });
