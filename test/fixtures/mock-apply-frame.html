@@ -70,10 +70,9 @@
     <script src="../../src/extension/content/index.js"></script>
     <script>
       setTimeout(() => {
-        editorNode.dispatchEvent(new PointerEvent("pointerover", { bubbles:true }));
+        document.querySelector("#target .doradude-cell-action").click();
         setTimeout(() => {
           const shadow = parent.document.querySelector("#doradude-notebook-root").shadowRoot;
-          shadow.querySelector(".mn-ask").click();
           shadow.querySelector("textarea").value = "把值改为 2";
           shadow.querySelector(".mn-submit").click();
           setTimeout(() => shadow.querySelector(".mn-apply")?.click(), 650);

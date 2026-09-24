@@ -8,7 +8,6 @@
       this.theme = initialTheme === "dark" ? "dark" : "light";
       this.iconUrl = iconUrl;
       this.activeCell = null;
-      this.hoveredCell = null;
       this.activeExchange = null;
       this.resultEntries = new Map();
       this.nextMessageId = 1;
@@ -29,7 +28,6 @@
       this.shadow.innerHTML = `${styles()}${markup()}`;
       if (supportsTopLayer) this.host.showPopover();
 
-      this.toolbar = this.shadow.querySelector(".mn-toolbar");
       this.panel = this.shadow.querySelector(".mn-panel");
       this.chat = this.shadow.querySelector(".mn-chat");
       this.empty = this.shadow.querySelector(".mn-empty");
@@ -42,10 +40,6 @@
       this.themeToggle = this.shadow.querySelector(".mn-theme");
       this.setTheme(this.theme);
 
-      this.toolbar.addEventListener("mouseenter", () => clearTimeout(this.hideTimer));
-      this.toolbar.addEventListener("mouseleave", () => this.scheduleHide());
-      this.shadow.querySelector(".mn-ask").addEventListener("click", () => this.open("edit"));
-      this.shadow.querySelector(".mn-fix").addEventListener("click", () => this.open("fix"));
       this.shadow.querySelector(".mn-close").addEventListener("click", () => this.close());
       this.shadow.querySelector(".mn-reset").addEventListener("click", () => this.resetSession());
       this.themeToggle.addEventListener("click", () => this.setTheme(this.theme === "dark" ? "light" : "dark", true));
@@ -71,29 +65,10 @@
       if (persist) Promise.resolve(this.handlers.onThemeChange?.(this.theme)).catch(() => {});
     }
 
-    showToolbar(cell) {
-      this.hoveredCell = cell;
-      if (this.panel.dataset.open === "true") return;
-      const rect = cell.getBoundingClientRect();
-      const top = Math.max(8, Math.min(window.innerHeight - 42, rect.top + 8));
-      const left = Math.max(8, Math.min(window.innerWidth - 190, rect.left + 8));
-      this.toolbar.style.transform = `translate(${left}px, ${top}px)`;
-      this.toolbar.dataset.visible = "true";
-    }
-
-    scheduleHide() {
-      clearTimeout(this.hideTimer);
-      this.hideTimer = setTimeout(() => {
-        if (this.panel.dataset.open !== "true") this.toolbar.dataset.visible = "false";
-      }, 180);
-    }
-
     open(action = "edit") {
-      if (this.hoveredCell) this.selectCell(this.hoveredCell);
       if (!this.activeCell) return;
       this.selectActionByName(action);
       this.panel.dataset.open = "true";
-      this.toolbar.dataset.visible = "false";
       this.handlers.onPanelToggle?.(true, this.panel.getBoundingClientRect().width);
       setTimeout(() => this.prompt.focus(), 0);
     }
@@ -552,10 +527,6 @@
 
   function markup() {
     return `
-      <div class="mn-toolbar" data-visible="false" role="toolbar" aria-label="Doradude Cell 工具">
-        <button class="mn-ask" type="button">Ask Codex</button>
-        <button class="mn-fix" type="button">修复</button>
-      </div>
       <aside class="mn-panel" data-open="false" aria-label="Doradude Notebook">
         <header>
           <div class="mn-brand">
@@ -591,11 +562,6 @@
       * { box-sizing:border-box; letter-spacing:0; }
       button,textarea { font:inherit; }
       button { cursor:pointer; }
-      .mn-toolbar { position:fixed; display:flex; height:34px; align-items:center; overflow:hidden; background:#202124; border:1px solid #34373b; border-radius:6px; box-shadow:0 5px 18px rgba(0,0,0,.2); pointer-events:auto; opacity:0; visibility:hidden; transition:opacity .12s ease; }
-      .mn-toolbar[data-visible="true"] { opacity:1; visibility:visible; }
-      .mn-toolbar button { height:32px; border:0; border-right:1px solid #3d4147; padding:0 11px; color:#fff; background:transparent; font-size:12px; font-weight:600; }
-      .mn-toolbar button:last-child { border-right:0; }
-      .mn-toolbar button:hover { background:#34373b; }
       .mn-panel { position:fixed; inset:0 0 0 auto; display:grid; grid-template-rows:58px minmax(0,1fr) auto; width:min(440px,100vw); overflow:hidden; background:var(--surface); border-left:1px solid var(--line); box-shadow:-12px 0 36px rgba(24,28,36,.16); pointer-events:auto; opacity:0; visibility:hidden; transform:translateX(18px); transition:opacity .16s ease,transform .16s ease; color:var(--ink); }
       .mn-panel[data-open="true"] { opacity:1; visibility:visible; transform:translateX(0); }
       .mn-panel[data-docked="true"] { box-shadow:none; }

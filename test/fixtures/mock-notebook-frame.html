@@ -49,15 +49,14 @@
     <script>
       history.replaceState(null, "", "workspaces/auto-R?path=42.ipynb");
       setTimeout(() => {
-        document.querySelector("#target textarea").dispatchEvent(new PointerEvent("pointerover", { bubbles:true }));
+        document.querySelector("#target .doradude-cell-action").click();
         setTimeout(() => {
           const root = parent.document.querySelector("#doradude-notebook-root");
           const shadow = root.shadowRoot;
-          shadow.querySelector(".mn-ask").click();
           shadow.querySelector("textarea").value = "解释当前 Cell";
           shadow.querySelector(".mn-submit").click();
           parent.document.body.dataset.doradudeReady = String(!document.querySelector("#doradude-notebook-root"));
-          parent.document.body.dataset.toolbarVisible = shadow.querySelector(".mn-toolbar").dataset.visible;
+          parent.document.body.dataset.cellActionVisible = String(!!document.querySelector("#target .doradude-cell-action"));
           parent.document.body.dataset.panelOpen = shadow.querySelector(".mn-panel").dataset.open;
           setTimeout(() => {
             shadow.querySelector("textarea").value = "再说明一个边界情况";

@@ -109,40 +109,95 @@
   }
 
   function observeLocalNotebook() {
-    let hoveredCell = null;
-    ui.selectCell(withCellLabel(adapter.getActiveCell()));
+    const initialCell = adapter.getActiveCell();
+    setActiveCellAction(initialCell);
+    ui.selectCell(withCellLabel(initialCell));
+    mountCellActions((cell) => {
+      setActiveCellAction(cell);
+      ui.selectCell(withCellLabel(cell));
+      ui.open("edit");
+    });
     const selectFromEvent = (event) => {
       const cell = adapter.findCell(event.target);
-      if (cell) ui.selectCell(withCellLabel(cell));
+      if (cell) {
+        setActiveCellAction(cell);
+        ui.selectCell(withCellLabel(cell));
+      }
     };
     document.addEventListener("pointerdown", selectFromEvent, true);
     document.addEventListener("focusin", selectFromEvent, true);
     document.addEventListener("keydown", scheduleActiveCellSync, true);
-    document.addEventListener(
-      "pointerover",
-      (event) => {
-        if (ui.host.contains(event.target)) return;
-        const cell = adapter.findCell(event.target);
-        if (!cell || cell === hoveredCell) return;
-        hoveredCell = cell;
-        ui.showToolbar(withCellLabel(cell));
-      },
-      true
-    );
-    document.addEventListener(
-      "pointerout",
-      (event) => {
-        if (!hoveredCell || hoveredCell.contains(event.relatedTarget)) return;
-        hoveredCell = null;
-        ui.scheduleHide();
-      },
-      true
-    );
 
     function scheduleActiveCellSync(event) {
       if (!["ArrowUp", "ArrowDown", "Enter", "Escape"].includes(event.key)) return;
-      setTimeout(() => ui.selectCell(withCellLabel(adapter.getActiveCell())), 0);
+      setTimeout(() => {
+        const cell = adapter.getActiveCell();
+        setActiveCellAction(cell);
+        ui.selectCell(withCellLabel(cell));
+      }, 0);
     }
+  }
+
+  function mountCellActions(onOpen) {
+    let scheduled = false;
+    const sync = () => {
+      scheduled = false;
+      for (const cell of adapter.getCells()) {
+        const nativeToolbar = findCellToolbar(cell);
+        let button = cell.querySelector(".doradude-cell-action");
+        if (!button) {
+          button = document.createElement("button");
+          button.className = "doradude-cell-action";
+          button.type = "button";
+          button.title = "Ask Doradude";
+          button.setAttribute("aria-label", "Ask Doradude");
+          const icon = document.createElement("img");
+          icon.src = chrome.runtime.getURL?.("icons/icon48.png") || "";
+          icon.alt = "";
+          button.append(icon);
+          button.addEventListener("pointerdown", (event) => event.stopPropagation());
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpen(cell);
+          });
+        }
+        const host = nativeToolbar || cell;
+        cell.classList.toggle("doradude-cell-action-fallback", !nativeToolbar);
+        button.dataset.placement = nativeToolbar ? "native" : "floating";
+        if (button.parentElement !== host) host.append(button);
+      }
+    };
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(sync);
+    };
+    sync();
+    new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  function setActiveCellAction(cell) {
+    for (const candidate of document.querySelectorAll(".doradude-cell-action-active")) {
+      candidate.classList.remove("doradude-cell-action-active");
+    }
+    cell?.classList.add("doradude-cell-action-active");
+  }
+
+  function findCellToolbar(cell) {
+    return cell.querySelector(
+      [
+        ".jp-Cell-toolbar",
+        ".jp-CellHeader .jp-Toolbar",
+        '[data-testid="cell-toolbar"]',
+        '[class*="cell-toolbar"]',
+        '[class*="cellToolbar"]',
+        '[class*="cell-actions"]',
+        '[class*="cellActions"]',
+        '[class*="cell-operation"]',
+        '[class*="cellOperation"]'
+      ].join(",")
+    );
   }
 
   function withCellLabel(cell) {
@@ -157,8 +212,8 @@
   }
 
   function observeNotebookFrame() {
-    let hoveredCell = null;
     let selectedCellId = "";
+    mountCellActions((cell) => notifyCellEvent(cell, "open"));
     const selectFromEvent = (event) => {
       const cell = adapter.findCell(event.target);
       if (cell) notifySelectedCell(cell);
@@ -174,53 +229,26 @@
       true
     );
     notifySelectedCell(adapter.getActiveCell());
-    document.addEventListener(
-      "pointerover",
-      (event) => {
-        const cell = adapter.findCell(event.target);
-        if (!cell || cell === hoveredCell) return;
-        hoveredCell = cell;
-        const rect = cell.getBoundingClientRect();
-        const position = adapter.getCellPosition(cell);
-        chrome.runtime.sendMessage({
-          type: "DORADUDE_FRAME_EVENT",
-          event: "show",
-          frameKey: adapter.getSessionKey(),
-          cellId: adapter.ensureCellId(cell),
-          cellNumber: position.number,
-          totalCells: position.total,
-          rect: { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left }
-        });
-      },
-      true
-    );
-    document.addEventListener(
-      "pointerout",
-      (event) => {
-        if (!hoveredCell || hoveredCell.contains(event.relatedTarget)) return;
-        const cellId = adapter.ensureCellId(hoveredCell);
-        hoveredCell = null;
-        chrome.runtime.sendMessage({
-          type: "DORADUDE_FRAME_EVENT",
-          event: "hide",
-          frameKey: adapter.getSessionKey(),
-          cellId
-        });
-      },
-      true
-    );
 
     function notifySelectedCell(cell) {
       if (!cell) return;
+      setActiveCellAction(cell);
       const cellId = adapter.ensureCellId(cell);
       const position = adapter.getCellPosition(cell);
       const selectionKey = `${cellId}:${position.number}:${position.total}`;
       if (selectionKey === selectedCellId) return;
       selectedCellId = selectionKey;
+      notifyCellEvent(cell, "select");
+    }
+
+    function notifyCellEvent(cell, event) {
+      if (!cell) return;
+      const cellId = adapter.ensureCellId(cell);
       const rect = cell.getBoundingClientRect();
+      const position = adapter.getCellPosition(cell);
       chrome.runtime.sendMessage({
         type: "DORADUDE_FRAME_EVENT",
-        event: "select",
+        event,
         frameKey: adapter.getSessionKey(),
         cellId,
         cellNumber: position.number,
@@ -254,17 +282,7 @@
       }
       return false;
     }
-    if (message.event === "hide") {
-      if (
-        ui.activeCell?.portal &&
-        ui.activeCell.frameId === message.frameId &&
-        ui.activeCell.cellId === message.cellId
-      ) {
-        ui.scheduleHide();
-      }
-      return false;
-    }
-    if (!["show", "select"].includes(message.event) || !message.rect) return false;
+    if (!["select", "open"].includes(message.event) || !message.rect) return false;
     const iframe = findNotebookFrame(message.frameKey);
     if (!iframe) return false;
     const frameRect = iframe.getBoundingClientRect();
@@ -282,11 +300,9 @@
       label: formatCellLabel(message.cellNumber, message.totalCells),
       getBoundingClientRect: () => rect
     };
-    if (message.event === "select") {
-      ui.selectCell(portalCell);
-      if (ui.panel.dataset.open === "true") updateDockedLayout(true, ui.panel.getBoundingClientRect().width);
-    }
-    else ui.showToolbar(portalCell);
+    ui.selectCell(portalCell);
+    if (message.event === "open") ui.open("edit");
+    else if (ui.panel.dataset.open === "true") updateDockedLayout(true, ui.panel.getBoundingClientRect().width);
     return false;
   }
 

@@ -5,3 +5,51 @@
 [data-doradude-cell-id]:hover {
   outline: 1px solid var(--doradude-cell-outline);
 }
+
+[data-doradude-cell-id].doradude-cell-action-fallback {
+  position: relative;
+}
+
+.doradude-cell-action {
+  box-sizing: border-box;
+  display: none;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.doradude-cell-action-active .doradude-cell-action {
+  display: inline-flex;
+}
+
+.doradude-cell-action:hover {
+  background: rgba(23, 105, 224, 0.1);
+}
+
+.doradude-cell-action:focus-visible {
+  outline: 2px solid #1769e0;
+  outline-offset: 1px;
+}
+
+.doradude-cell-action img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.doradude-cell-action[data-placement="floating"] {
+  position: absolute;
+  z-index: 20;
+  top: 8px;
+  right: 8px;
+}
