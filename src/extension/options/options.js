@@ -1,5 +1,5 @@
 const DEFAULTS = {
-  endpoint: "http://127.0.0.1:4343",
+  endpoint: "http://127.0.0.1:4344",
   token: "",
   neighborCells: 2,
   customCellSelector: "",

@@ -35,7 +35,7 @@ Start the Bridge:
 npm run bridge
 ```
 
-Then open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist/extension`. The settings page opens on first install. Keep the default endpoint `http://127.0.0.1:4343`, grant access when prompted, and use **Test connection**.
+Then open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `dist/extension`. The settings page opens on first install. Keep the default endpoint `http://127.0.0.1:4344`, grant access when prompted, and use **Test connection**.
 
 Open a DataLeap Notebook and hover over a code cell. Choose **Ask Codex** or **Fix** to open the persistent right sidebar. The sidebar keeps the current page's chat history, streams available Codex reasoning summaries and progress, and collapses the reasoning section when the final answer arrives. Review returned code before explicitly applying it.
 
@@ -60,7 +60,7 @@ Each request still includes the latest visible Cell context. Thread memory is us
 The safest remote setup is to keep the Bridge on loopback and use an SSH tunnel:
 
 ```bash
-ssh -N -L 4343:127.0.0.1:4343 your-development-host
+ssh -N -L 4344:127.0.0.1:4344 your-development-host
 ```
 
 For a directly reachable service, bind to a non-loopback address only with a token and put TLS in front of it:
@@ -78,7 +78,7 @@ Optional environment variables:
 | Variable | Default | Purpose |
 |---|---|---|
 | `DORADUDE_HOST` | `127.0.0.1` | HTTP listen address |
-| `DORADUDE_PORT` | `4343` | HTTP listen port |
+| `DORADUDE_PORT` | `4344` | HTTP listen port |
 | `DORADUDE_TOKEN` | empty on loopback | Bearer token |
 | `DORADUDE_CODEX_BIN` | `codex` | Codex executable |
 | `DORADUDE_CODEX_MODEL` | Codex default | Optional model override |

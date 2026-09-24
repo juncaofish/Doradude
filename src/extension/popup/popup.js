@@ -4,7 +4,7 @@ const endpoint = document.querySelector("#endpoint");
 
 document.querySelector("#settings").addEventListener("click", () => chrome.runtime.openOptionsPage());
 
-chrome.storage.sync.get({ endpoint: "http://127.0.0.1:4343" }).then((settings) => {
+chrome.storage.sync.get({ endpoint: "http://127.0.0.1:4344" }).then((settings) => {
   endpoint.textContent = settings.endpoint;
   chrome.runtime.sendMessage(
     { type: "DORADUDE_BRIDGE_REQUEST", path: "/health", method: "GET" },
