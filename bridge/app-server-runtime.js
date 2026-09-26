@@ -36,12 +36,18 @@ export class AppServerRuntime {
   }
 
   async health() {
-    await this.start();
     await this.sessions.load();
+    let codexError = null;
+    try {
+      await this.start();
+    } catch (error) {
+      codexError = error instanceof Error ? error.message : String(error);
+    }
     return {
-      status: "ok",
+      status: codexError ? "degraded" : "ok",
       runtime: "codex app-server",
-      codex: this.serverInfo?.userAgent || "connected",
+      codex: this.serverInfo?.userAgent || (codexError ? "unavailable" : "connected"),
+      codexError,
       sessions: this.sessions.size
     };
   }

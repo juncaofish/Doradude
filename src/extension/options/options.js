@@ -52,7 +52,13 @@ async function testConnection() {
       method: "GET"
     });
     if (!response.ok) throw new Error(response.error || "连接失败");
-    setStatus(connectionStatus, `连接成功 · ${response.data.codex || "Codex"}`, "success");
+    const health = response.data || {};
+    if (health.status === "degraded") {
+      const detail = health.codexError ? `：${health.codexError}` : "";
+      setStatus(connectionStatus, `Bridge 已连接，但 Codex 未就绪${detail}`, "error");
+    } else {
+      setStatus(connectionStatus, `连接成功 · ${health.codex || "Codex"}`, "success");
+    }
   } catch (error) {
     setStatus(connectionStatus, error.message, "error");
   } finally {

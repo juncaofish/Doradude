@@ -71,6 +71,12 @@ export function startServer(config) {
     console.log(`Doradude Codex Bridge listening on http://${config.host}:${config.port}`);
     console.log(`Codex binary: ${config.codexBinary}${config.model ? ` · model: ${config.model}` : ""}`);
   });
+  server.on("error", (error) => {
+    const detail = error.code === "EADDRINUSE"
+      ? `Port ${config.port} is already in use`
+      : `${error.code || "listen error"}: ${error.message}`;
+    console.error(`[doradude] Unable to listen on http://${config.host}:${config.port}: ${detail}`);
+  });
   server.on("close", () => runtime.stop());
   return server;
 }
